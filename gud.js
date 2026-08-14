@@ -1,4 +1,5 @@
 import init from './init.js';
+import add from './add.js';
 import path from 'path';
 
 const args = process.argv.slice(2);
@@ -9,6 +10,10 @@ function runGud(args) {
   switch(command) {
     case 'init':
       init();
+      break;
+
+    case 'add':
+      add(args[1]);
       break;
 
     default:
