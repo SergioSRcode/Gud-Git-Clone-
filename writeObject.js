@@ -3,19 +3,26 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { buildBlob } from './buildBlob.js';
 import hashBlob from './hashBlob.js';
+import { getPathToGud } from './pathToGud.js';
 
 export default function writeObject(content) {
   const blob = buildBlob(content);  // returns a blob
-  const hash = hashBlob(blob);  // returns a hashed blob
+  const hash = storeObject(blob);
 
-  const compressedBlob = zlib.deflateSync(blob); // compresses blob = file content
+  return hash;
+}
 
-  const blobDirName = hash.slice(0, 2);  // first 2 chars of hash = dir name
-  const blobFileName = hash.slice(2);    // remaining chars = file name
-  const blobPath = path.join(process.cwd(), '.gud', 'objects', blobDirName);
+export function storeObject(buffer) {
+  const hash = hashBlob(buffer);  // returns a hashed buffer (blob or tree)
 
-  fs.mkdirSync(blobPath, { recursive: true });
-  fs.writeFileSync(path.join(blobPath, blobFileName), compressedBlob);
+  const compressedObj = zlib.deflateSync(buffer); // compresses buffer = file content
+
+  const objDirName = hash.slice(0, 2);  // first 2 chars of hash = dir name
+  const objFileName = hash.slice(2);    // remaining chars = file name
+  const objPath = path.join(getPathToGud(), 'objects', objDirName);
+
+  fs.mkdirSync(objPath, { recursive: true });
+  fs.writeFileSync(path.join(objPath, objFileName), compressedObj);
   
   return hash;
 }
