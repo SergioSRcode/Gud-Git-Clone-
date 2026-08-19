@@ -1,5 +1,6 @@
 import init from './init.js';
 import add from './add.js';
+import commit from './commit.js';
 import path from 'path';
 
 const args = process.argv.slice(2);
@@ -14,6 +15,10 @@ function runGud(args) {
 
     case 'add':
       add(args[1]);
+      break;
+
+    case 'commit':
+      commit(args[args.length - 1]);
       break;
 
     default:

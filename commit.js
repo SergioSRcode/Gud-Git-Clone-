@@ -19,6 +19,8 @@ export default function commit(message) {
   const parentCommitHash = readHead();  // null for first commit
   const commitContentString = createCommitContent(rootTreeHash, parentCommitHash, message.trim());
   const commitBuffer = serializeContentStringToCommitObject(commitContentString);
+  // stores compressed commit object to obj store
+  // returns the commit objects hash
   const commitHash = storeObject(commitBuffer);
   
   updateRef(commitHash);
