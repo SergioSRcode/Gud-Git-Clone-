@@ -4,6 +4,7 @@ import buildTree from "./buildTree.js";
 import { storeObject } from "./writeObject.js";
 import readHead from "./readHead.js";
 import updateRef from "./updateRef.js";
+import readObject from "./readObject.js";
 
 export default function commit(message) {
   const index = readIndex();  // staged files as path-keyed obj
@@ -17,6 +18,12 @@ export default function commit(message) {
   // returns the root tree hash
   const rootTreeHash = buildTree(dirStructure);
   const parentCommitHash = readHead();  // null for first commit
+
+  if (parentCommitHash && parseCommit(parentCommitHash).tree === rootTreeHash) {
+    console.log("nothing to commit.");
+    return;
+  }
+
   const commitContentString = createCommitContent(rootTreeHash, parentCommitHash, message.trim());
   const commitBuffer = serializeContentStringToCommitObject(commitContentString);
   // stores compressed commit object to obj store
@@ -24,6 +31,29 @@ export default function commit(message) {
   const commitHash = storeObject(commitBuffer);
   
   updateRef(commitHash);
+}
+
+export function parseCommit(commitHash) {
+  const contentBuffer = readObject(commitHash);
+  if (!contentBuffer) return null;
+
+  const contentString = contentBuffer.toString('utf8');
+  const linesObj = {};
+  const [headersStr, message] = contentString.split('\n\n');
+  
+  linesObj.message = message;
+  
+  headersStr.split('\n').forEach(line => {
+    const firstSpaceIdx = line.indexOf(' ');
+    const title = line.slice(0, firstSpaceIdx);
+    const value = line.slice(firstSpaceIdx + 1);
+
+    linesObj[title] = value;
+  });
+
+  if (!linesObj.parent) linesObj.parent = null;
+
+  return linesObj;
 }
 
 function createCommitContent(rootHash, parentHash, message = 'no commit message') {
