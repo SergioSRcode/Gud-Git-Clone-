@@ -3,6 +3,13 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
 
+/*
+data context: deflated objectBuffer looks like this:
+
+commit <size>\0<content>
+
+*/
+
 export default function readObject(hash) {
   if (hash === null) return null;
 
