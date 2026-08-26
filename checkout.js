@@ -84,31 +84,50 @@ function removeStaleFiles(oldEntries, newEntries) {
     if (!blobHash) {
       const fullPath = path.join(process.cwd(), filePath);
       fs.unlinkSync(fullPath);
+      removeEmptyDirs(filePath);
     }
   });
 }
 
-// function parseNewLines(newLines) {
-//   const lines = Object.keys(newLines);
-//   const parsedPaths = {};
+/*
+INPUT: path
+OUTPUT: /
+SIDEEFFECT: removes empty dir
 
-//   lines.forEach(line => {
-//     const relPath = path.relative(process.cwd(), line);
-//     parsedPaths[relPath] = newLines[line];
-//   });
+MM:
+if path === empty, return;
+truncate the last part of the path (file on first iteration, subdir after that),
+then check if current folder path is empty, if yes, remove that folder.
+Then call removeEmptyDirs with the truncated path.
 
-//   return parsedPaths;
-// }
 
-// function parsefullToRelPath(fullPath) {
-//   return path.relative(process.cwd(), fullPath);
-// }
+ALGO:
+1. if filePath is equal to '.', return;
+2. remove last part of path
+3. check if current subdir is empty, if no, return;
+  - if yes: remove subdir
+4. call removeEmptyDirs with new path
+*/
 
-// parsefullToRelPath('/Users/sergioravera/projects/gitClone/git-clone/tester2/newTest.txt')
+function removeEmptyDirs(filePath) {
+  const truncatedPath = path.dirname(filePath);
+  if (truncatedPath === '.') return;
 
-// parseNewLines({
-//   '/Users/sergioravera/projects/gitClone/git-clone/tester2/newTest.txt': 'fff2809779109e3ba2197b59cb1eb3b9730b0f7e',
-//   '/Users/sergioravera/projects/gitClone/git-clone/tester/test.txt': '74aee647ea50aa42e21353064913846fa372b5e5',
-//   '/Users/sergioravera/projects/gitClone/git-clone/testRoot.md': '1e487f3cc346fa72b4cb2e67380387855a473d81'
-// });
+  const root = process.cwd();
+  const fullPath = path.join(root, truncatedPath);
+
+  const isEmptyDir = fs.readdirSync(fullPath).length === 0;
+  if (!isEmptyDir) return;
+
+  fs.rmdirSync(fullPath);
+  removeEmptyDirs(truncatedPath);
+}
+
+// console.log(path.dirname("."));
+
+// removeEmptyDirs('tester2/newTest.txt');
+// removeEmptyDirs('notEmpty/empty/test.txt');
+// removeEmptyDirs('testRoot.md');
+// removeEmptyDirs('.');
+
 // checkout('f786d9987a8f3575cb05556f2da1d27d3a57327f')
