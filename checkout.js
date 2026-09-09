@@ -4,6 +4,9 @@ import readObject from "./readObject.js";
 import writeIndex from "./writeIndex.js";
 import path from 'node:path';
 import fs from 'node:fs';
+import createBranch from "./createBranch.js";
+import { getPathToGud } from "./pathToGud.js";
+import readHead from "./readHead.js";
 /*
 INPUT: hash string
 OUTPUT: /
@@ -38,7 +41,51 @@ OUTPUT: /
       write dir with name to disk
       invoke HELPER with hash, newPath
 */
-export default function checkout(commitHash) {
+export default function checkout(arg1, arg2) {
+  if (arg1 === '-b') {
+    const branchName = arg2;
+    const created = createBranch(branchName);
+    if (!created) return;
+
+    const newBranchPath = path.join(getPathToGud(), 'refs', 'heads', branchName);
+    writeAttachedHead(newBranchPath);
+  } else {
+    const branchPath = path.join(getPathToGud(), 'refs', 'heads', arg1);
+    let commitHashToRestore = '';
+
+    if (fs.existsSync(branchPath)) {  // arg is branch name
+      writeAttachedHead(branchPath);
+      commitHashToRestore = readHead();
+    } else {  // arg is raw commit hash
+      const hash = arg1;
+      if (readObject(hash) === null) {
+        console.error('Cannot checkout non-existing commit');
+        return;
+      }
+
+      writeDetachedHead(hash);
+      commitHashToRestore = hash;
+    }
+
+    restore(commitHashToRestore);
+  }
+}
+
+function writeAttachedHead(pathToHeadRef) {
+  const gudPath = getPathToGud();
+  const relativePath = path.relative(gudPath, pathToHeadRef);
+  const pathToHead = path.join(gudPath, 'HEAD');
+ 
+  fs.writeFileSync(pathToHead, `ref: ${relativePath}\n`);
+}
+
+function writeDetachedHead(hash) {
+  const pathToHead = path.join(getPathToGud(), 'HEAD');
+ 
+  fs.writeFileSync(pathToHead, hash + '\n');
+}
+
+function restore(commitHash) {
   const rootTreeHash = parseCommit(commitHash).tree;
   const commitTreeEntries = writeObjToPath(rootTreeHash, process.cwd());
   const currentEntries = readIndex();
