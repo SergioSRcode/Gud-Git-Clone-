@@ -50,6 +50,10 @@ export default function checkout(arg1, arg2) {
     const newBranchPath = path.join(getPathToGud(), 'refs', 'heads', branchName);
     writeAttachedHead(newBranchPath);
   } else {
+    if (!arg1) {
+      console.error('checkout argument is required');
+      return;
+    }
     const branchPath = path.join(getPathToGud(), 'refs', 'heads', arg1);
     let commitHashToRestore = '';
 

@@ -2,7 +2,8 @@ import init from './init.js';
 import add from './add.js';
 import commit from './commit.js';
 import log from './log.js';
-import path from 'path';
+import checkout from './checkout.js';
+// import path from 'path';
 
 const args = process.argv.slice(2);
 
@@ -30,6 +31,10 @@ function runGud(args) {
 
     case 'log':
       log();
+      break;
+
+    case 'checkout':
+      checkout(args[1], args[2]);
       break;
 
     default:
