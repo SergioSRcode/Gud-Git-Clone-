@@ -5,8 +5,10 @@ import { getPathToGud } from "./pathToGud.js";
 import readHead from "./readHead.js";
 import path from 'node:path';
 import fs from 'node:fs';
-// import { readObjectSize } from "./readObject.js";
-
+import readObject from "./readObject.js";
+import buildDirectoryStructure from "./buildDirectoryStructure.js";
+import buildTree from "./buildTree.js";
+import { storeObject } from "./writeObject.js";
 
 export default function merge(targetBranchName) {
   const currentHash = readHead();
@@ -112,6 +114,61 @@ export function findMergeBase(commitHashA, commitHashB) {
   return commonAncestor;
 }
 
+/*
+Given a hash and a prefix signifying a relative path, create a function
+that walks a tree object writing all files into a map.
+The map should be path-keyed with each blob hash as its value:
+{
+  "relative/path/to/file: blobHash,
+  "relativepathto/file: blobHash, ..."
+}
 
+INPUT: string (hash), string (prefix)
+OUTPUT: object map
 
+MM:
+Get list of all files/subdirs of the current tree (derived from treeHash).
+For each subdir recurse appending the subdir name to prefix.
+For each file, save current relative path and the blobs hash as a key-value pair
+
+ALGO:
+0. CREATE paths obj literal
+1. READ treeHashContent
+2. PARSE to string
+3. SPLIT to a list of files/subdirs
+4. ForEach entry, 
+  - if type is blob: SAVE rel path and its hash to paths obj
+  - if type is tree: move into that dir (recursive call: treeHash, subdir appended to prefix)
+  - if prefix is "", reassign prefix with the path
+    - else append "/" + "relPath"
+5. RETURN paths obj
+*/
+
+export function flattenTree(treeHash, prefix = "") {
+  let paths = {};
+
+  const objBuffer = readObject(treeHash);
+  if (objBuffer === null) return {};
+
+  const linesString = objBuffer.toString('utf8'); 
+  const lines = linesString.split('\n');
+
+  lines.forEach(line => {
+    const [ type, hash, name ] = line.split(" ");
+    const relPath = `${!prefix ? "" : prefix + '/'}${name}`;
+    
+    if (type === 'tree') {
+      const prevPaths = flattenTree(hash, relPath);
+      paths = { ...prevPaths, ...paths };
+    } else if (type === 'blob') {
+      paths[relPath] = hash;
+    }
+  });
+
+  return paths;
+}
+
+// flattenTree('83ecd96e847b4e3b009d8d3fe4a9ec9395a16067');
+// console.log(flattenTree('83ecd96e847b4e3b009d8d3fe4a9ec9395a16067'));
+// console.log(flattenTree('b060b217fd1aec8b4ecbb374f819304c25511fe1').toString());
 // console.log(findMergeBase("cd68bc8ba207abe857c5522f04b45c6c17e679ab", "6e6dcba315be806cfa1a3d32d9b2de59e08c43c7"));
