@@ -89,7 +89,7 @@ function writeDetachedHead(hash) {
   fs.writeFileSync(pathToHead, hash + '\n');
 }
 
-function restore(commitHash) {
+export function restore(commitHash) {
   const rootTreeHash = parseCommit(commitHash).tree;
   const commitTreeEntries = writeObjToPath(rootTreeHash, process.cwd());
   const currentEntries = readIndex();

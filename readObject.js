@@ -27,4 +27,23 @@ export default function readObject(hash) {
   return content;
 }
 
+export function readObjectSize(hash) {
+  if (hash === null) return null;
+
+  const subDirName = hash.slice(0, 2);
+  const objectName = hash.slice(2);
+  const pathToObject = path.join(getPathToGud(), 'objects', subDirName, objectName);
+
+  if (!fs.existsSync(pathToObject)) return null;
+
+  const compressedObj = fs.readFileSync(pathToObject);
+  const objectBuffer = zlib.inflateSync(compressedObj);
+  const contentSeparatorIdx = objectBuffer.indexOf(0);
+  const headerSeparatorIdx = objectBuffer.indexOf(" ");
+  const header = objectBuffer.subarray(0, contentSeparatorIdx + 1);
+  const size = header.subarray(headerSeparatorIdx + 1)
+
+  return size;
+}
+
 // console.log(readObject("5cd01f144bf1cccebbde9e93050aa740ffb48d8b"));
