@@ -172,3 +172,114 @@ export function flattenTree(treeHash, prefix = "") {
 // console.log(flattenTree('83ecd96e847b4e3b009d8d3fe4a9ec9395a16067'));
 // console.log(flattenTree('b060b217fd1aec8b4ecbb374f819304c25511fe1').toString());
 // console.log(findMergeBase("cd68bc8ba207abe857c5522f04b45c6c17e679ab", "6e6dcba315be806cfa1a3d32d9b2de59e08c43c7"));
+
+/*
+Create a function that takes 3 flat maps, one baseline that
+records the state before any changes, one that records any changes
+we made on the baseline and one that records any changes someone else made
+on the baseline. A map is path-keyed:
+{
+  path/to/file: hashA,
+  pathto/file: hashB,
+}
+
+Compare all three maps against each other to record all changes
+made to the baseline map. Should there be a change on the same file
+on both sides: ours and theirs, record it as conflict.
+
+The result should be a map containing: 
+1: the combined file map of successful changes
+2: a list of confliciting changes (only paths)
+
+The result should have a shape like this:
+{
+  merged: {
+    path/to/file: hashA,
+    pathto/file: hashB,
+    ...
+  },
+  conflicts: [
+    path/to/another/file,
+    pathtofile,
+    ...
+  ]
+}
+
+INPUT: obj map1 (base), obj map2 (ours), obj map3 (theirs)
+OUTPUT: obj map
+
+==== RULES ====
+- each argument map is path-keyed with a hash value:
+  path: hash
+- ours and theirs must be compared against base for mismatches/changes:
+  - if only one side is mismatched, take that one
+  - else mismatches are then checked against the other (ours or theirs):
+    - if they are the same (same hash) -> take any
+    - else it's a conflict path
+- non-existing paths are undefined
+- an object map containing 2 properties is returned:
+  - 1: a map containing all successful changes
+  - 2: a list of conflicting paths/changes
+
+
+==== MM ====
+Collect all paths in a set, then iterate over set keys, comparing
+key-value pairs of our map objects against each other.
+Collect valid changes to base and conflicting paths between ours and theirs.
+
+==== ALGO ====
+- CREATE object literal (result) with 2 properties (merged: {}, conflicts: [])
+- COLLECT all paths into a set
+- ITERATE over set:
+  - for each path:
+    - check if ours[path] is equal to base[path]
+    - check if theirs[path] is equal to base[path]
+    - if both are === base[path] save 'path: hash' to result[merged]
+    - if only one differs => save the 'path: hash' of the mismatch
+      - NOTE: if the mismatch value is undefined, skip it
+    - if both differ => PUSH path to conflict
+- RETURN result
+*/
+
+export function threeWayMerge(base, ours, theirs) {
+  const result = { merged: {}, conflicts: [] };
+  const paths = [...Object.keys(base), ...Object.keys(ours), ...Object.keys(theirs)];
+  const uniquePaths = new Set(paths);
+
+  uniquePaths.forEach(filePath => {
+    const oursIsUnchanged = ours[filePath] === base[filePath];
+    const theirsIsUnchanged = theirs[filePath] === base[filePath];
+
+    if (oursIsUnchanged && theirsIsUnchanged) {
+      result.merged[filePath] = base[filePath];
+    } else if (oursIsUnchanged) {
+      if (theirs[filePath] !== undefined) result.merged[filePath] = theirs[filePath];
+    } else if (theirsIsUnchanged) {
+      if (ours[filePath] !== undefined) result.merged[filePath] = ours[filePath];
+    } else {  // both are changed
+      if (ours[filePath] === theirs[filePath]) {
+        // take any one version
+        if (ours[filePath] !== undefined) result.merged[filePath] = ours[filePath];
+      } else {
+        result.conflicts.push(filePath);
+      }
+    }
+  });
+  
+  return result;
+}
+
+// console.log(threeWayMerge({
+//   'pathto/file': 'hashB',  
+//   'unchanged': 'no change'
+//   }, {
+//   'path/to/file': 'hashA',
+//   'unchanged': 'no change',
+//   'dingo': 'what'
+//   }, {
+//   'path/to/file': 'hashA',
+//   'pathto/file': 'hashB',
+//   'unchanged': 'no change',
+//   'dingo': 'babies'
+//   }
+// ));
