@@ -23,8 +23,8 @@ export default function commit(message) {
     console.log("nothing to commit.");
     return;
   }
-
-  const commitContentString = createCommitContent(rootTreeHash, parentCommitHash, message.trim());
+  const parsedParentCommitHash = parentCommitHash ? [parentCommitHash] : [];
+  const commitContentString = createCommitContent(rootTreeHash, parsedParentCommitHash, message.trim());
   const commitBuffer = serializeContentStringToCommitObject(commitContentString);
   // stores compressed commit object to obj store
   // returns the commit objects hash
@@ -48,23 +48,29 @@ export function parseCommit(commitHash) {
     const title = line.slice(0, firstSpaceIdx);
     const value = line.slice(firstSpaceIdx + 1);
 
-    linesObj[title] = value;
+    if (title === 'parent') {
+      linesObj.parents
+        ? linesObj.parents.push(value)
+        : linesObj.parents = [ value ];
+    } else {
+      linesObj[title] = value;
+    }
   });
 
-  if (!linesObj.parent) linesObj.parent = null;
+  if (!linesObj.parents) linesObj.parents = [];
 
   return linesObj;
 }
 
-function createCommitContent(rootHash, parentHash, message = 'no commit message') {
+export function createCommitContent(rootHash, parentHashes, message = 'no commit message') {
   const treeLine = `tree ${rootHash}`;
-  const parentLine = parentHash ? `\nparent ${parentHash}` : '';
+  const parentLines = parentHashes.length ? parentHashes.map(hash => `\nparent ${hash}`).join("") : "";
   const authorLine = `\nauthor gud user ${new Date().toISOString()}`;
   const blankline = '\n\n';
   const messageLine = message;
 
   const commitObjectContent = treeLine.concat(
-    parentLine, 
+    parentLines, 
     authorLine, 
     blankline, 
     messageLine
@@ -73,7 +79,7 @@ function createCommitContent(rootHash, parentHash, message = 'no commit message'
   return commitObjectContent;
 }
 
-function serializeContentStringToCommitObject(contentString) {
+export function serializeContentStringToCommitObject(contentString) {
   const content = Buffer.from(contentString);
   const header = Buffer.from("commit " + content.length + "\0");
 
@@ -84,3 +90,23 @@ function serializeContentStringToCommitObject(contentString) {
 // createCommitContent('aaaaaaaaaaa', null, 'working tessst');
 // createCommitContent('aaaaaaaaaaa', 'bbbbbbb');
 // createCommitContent('aaaaaaaaaaa', null);
+// console.log(createCommitContent('rootHash', ['sdflkjdsf', 'dddddd'], 'test'));
+// console.log(createCommitContent('rootHash', ['sdflkjdsf', 'dddddd'], 'test'));
+// console.log(createCommitContent('rootHash', ['sdflkjdsf', 'dddddd'], 'test'));
+
+// export function createCommitContent(rootHash, parentHash, message = 'no commit message') {
+//   const treeLine = `tree ${rootHash}`;
+//   const parentLine = parentHash ? `\nparent ${parentHash}` : '';
+//   const authorLine = `\nauthor gud user ${new Date().toISOString()}`;
+//   const blankline = '\n\n';
+//   const messageLine = message;
+
+//   const commitObjectContent = treeLine.concat(
+//     parentLine, 
+//     authorLine, 
+//     blankline, 
+//     messageLine
+//   );
+
+//   return commitObjectContent;
+// }

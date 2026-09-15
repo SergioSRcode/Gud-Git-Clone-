@@ -5,13 +5,13 @@ export default function log(commitHash = readHead()) {
   const commit = parseCommit(commitHash);
   if (commit === null) return;
 
-  const { author, parent, message } = commit;
+  const { author, parents, message } = commit;
   
   console.log(`\ncommit ${commitHash}\n${author}\n\n    ${message}`);
 
-  if (!parent) return;
+  if (parents.length === 0) return;
 
-  log(parent);
+  log(parents[0]);
 }
 
 // log();

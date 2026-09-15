@@ -92,10 +92,10 @@ export function findMergeBase(commitHashA, commitHashB) {
     if (commitAncestorsA.has(commitHash)) return;  // avoids rewalks on two-parent commits
     commitAncestorsA.add(commitHash);
 
-    const parent = parseCommit(commitHash).parent;
-    if (parent === null) return;
+    const parents = parseCommit(commitHash).parents;
+    if (parents.length === 0) return;
 
-    populateAllAncestorsSet(parent);
+    parents.forEach(parent => populateAllAncestorsSet(parent));
   }
 
   populateAllAncestorsSet(commitHashA);
@@ -103,10 +103,15 @@ export function findMergeBase(commitHashA, commitHashB) {
   function findCommonAncestor(commitHash) {
     if (commitAncestorsA.has(commitHash)) return commitHash;
     
-    const parent = parseCommit(commitHash).parent;
-    if (parent === null) return null;
+    const parents = parseCommit(commitHash).parents;
+    if (parents.length === 0) return null;
 
-    return findCommonAncestor(parent);
+    for (const parent of parents) {
+      const found = findCommonAncestor(parent);
+      if (found) return found;
+    }
+
+    return null;
   }
 
   const commonAncestor = findCommonAncestor(commitHashB);
