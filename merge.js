@@ -9,6 +9,7 @@ import readObject from "./readObject.js";
 import buildDirectoryStructure from "./buildDirectoryStructure.js";
 import buildTree from "./buildTree.js";
 import { storeObject } from "./writeObject.js";
+import { createCommitContent, serializeContentStringToCommitObject } from "./commit.js";
 
 export default function merge(targetBranchName) {
   const currentHash = readHead();
@@ -38,8 +39,29 @@ export default function merge(targetBranchName) {
     console.log("Fast-Forward Merge successful.");
   } else {
     // 3 way merge
-    console.log("three-way merge not yet implemented");
-    return;
+    const baseEntries = flattenTree(parseCommit(commonAncestor).tree);
+    const ourEntries = flattenTree(parseCommit(currentHash).tree);
+    const theirEntries = flattenTree(parseCommit(targetHash).tree);
+    const { merged, conflicts } = threeWayMerge(baseEntries, ourEntries, theirEntries);
+    if (conflicts.length > 0) {
+      console.error(`Conflict at: ${conflicts.join('\n')}`);
+      console.log("Please resolve any conflicts, then restart the merge attempt");
+      return;
+    }
+
+    const mergeStructure = buildDirectoryStructure(merged);
+    const mergeTreeHash = buildTree(mergeStructure);
+    const mergeCommitContent = createCommitContent(
+      mergeTreeHash, 
+      [currentHash, targetHash], 
+      `Merge branch "${targetBranchName}"`
+    );
+    const mergeCommitBuffer = serializeContentStringToCommitObject(mergeCommitContent);
+    const mergeCommitHash = storeObject(mergeCommitBuffer);
+
+    updateRef(mergeCommitHash);
+    restore(mergeCommitHash);
+    console.log("Three-Way Merge successful.");
   }
 }
 
