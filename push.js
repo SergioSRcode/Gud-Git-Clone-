@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readHead from "./readHead.js";
-import { getPathToGud } from "./pathToGud.js";
+import { collectReachableObjects } from './sync.js';
 /*
 Given a remote path and a local branch name, 
 find out, if the remote tip commit is an ancestor of the local branch.
@@ -33,11 +33,42 @@ Lastly update the remotes ref
       - if no => create it/write it
       - if yes, continue to next hash
 - UPDATE remotes ref (HEAD) to the current tip (same as local)
+
+NOTE:
+if remote tip doesn't exist, omit ancestry check and push all objects
 */
 
 export default function push(remotePath, branchName) {
   const localTip = findBranchTip(branchName);
+  if (!localTip) return;
+
+  const remoteTip = readHead(remotePath);
+  const reachableObjHashes = collectReachableObjects(localTip);
+  const { pathToHeads, pathToObjects, headName } = getGudData(remotePath);
   
+  if (remoteTip) {
+    if (!reachableObjHashes.has(remoteTip)) {
+      console.error(`! [rejected] ${branchName} --> ${headName} (non-fast-forward)`);
+      console.error(`Error: Push rejected, ${headName} is not an ancestor of ${branchName}`);
+      return;
+    }
+  }
+  
+  reachableObjHashes.forEach(hash => {
+    const dirName = hash.slice(0, 2);
+    const fileName = hash.slice(2);
+    const destPath = path.join(pathToObjects, dirName, fileName);
+    const sourcePath = path.join(getGudData(process.cwd()).pathToObjects, dirName, fileName);
+
+    if (!fs.existsSync(destPath)) {
+      const objDir = path.join(pathToObjects, dirName);
+      if (!fs.existsSync(objDir)) fs.mkdirSync(objDir, { recursive: true });
+
+      fs.copyFileSync(sourcePath, destPath);
+    } 
+  });
+
+  fs.writeFileSync(path.join(pathToHeads, branchName), localTip);
 }
 
 function findBranchTip(branchName, root = process.cwd()) {
@@ -45,8 +76,22 @@ function findBranchTip(branchName, root = process.cwd()) {
   if (!fs.existsSync(branchPath)) return null;
 
   const hash = fs.readFileSync(branchPath, 'utf8');
+  if (!hash) return null;
 
-  return hash
+  return hash.trim();
 }
 
-findBranchTip('banana');
+function getGudData(root = process.cwd()) {
+  const pathToGud = path.join(root, '.gud');
+  const pathToHeads = path.join(pathToGud, 'refs', 'heads');
+  const pathToHeadRef = path.join(pathToGud, 'HEAD');
+  const pathToObjects = path.join(pathToGud, 'objects');
+  const headName = path.basename(pathToHeadRef);
+
+  return { pathToGud, pathToHeads, pathToHeadRef, pathToObjects, headName };
+}
+
+// const remPath = path.join(process.cwd(), 'subdir');
+// push(remPath, 'main');
+// push(remPath, 'main');
+// findBranchTip('banana');
