@@ -124,7 +124,7 @@ export function findMergeBase(commitHashA, commitHashB) {
 
   function findCommonAncestor(commitHash) {
     if (commitAncestorsA.has(commitHash)) return commitHash;
-    
+
     const parents = parseCommit(commitHash).parents;
     if (parents.length === 0) return null;
 
@@ -137,7 +137,6 @@ export function findMergeBase(commitHashA, commitHashB) {
   }
 
   const commonAncestor = findCommonAncestor(commitHashB);
-
   return commonAncestor;
 }
 

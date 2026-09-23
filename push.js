@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readHead from "./readHead.js";
+import { getPathToCurrentHead } from './readHead.js';
 import { collectReachableObjects } from './sync.js';
 /*
 Given a remote path and a local branch name, 
@@ -69,7 +70,7 @@ export default function push(remotePath, branchName) {
   fs.writeFileSync(path.join(pathToHeads, branchName), localTip);
 }
 
-function findBranchTip(branchName, root = process.cwd()) {
+export function findBranchTip(branchName, root = process.cwd()) {
   const branchPath = path.join(root, '.gud', 'refs', 'heads', branchName);
   if (!fs.existsSync(branchPath)) return null;
 
@@ -79,12 +80,13 @@ function findBranchTip(branchName, root = process.cwd()) {
   return hash.trim();
 }
 
-function getGudData(root = process.cwd()) {
+export function getGudData(root = process.cwd()) {
   const pathToGud = path.join(root, '.gud');
   const pathToHeads = path.join(pathToGud, 'refs', 'heads');
   const pathToHeadRef = path.join(pathToGud, 'HEAD');
   const pathToObjects = path.join(pathToGud, 'objects');
-  const headName = path.basename(pathToHeadRef);
+  const pathToCurrentHead = getPathToCurrentHead(root);
+  const headName = pathToCurrentHead ? path.basename(pathToCurrentHead) : null;
 
   return { pathToGud, pathToHeads, pathToHeadRef, pathToObjects, headName };
 }

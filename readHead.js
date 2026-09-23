@@ -26,12 +26,12 @@ function isDetachedHead(headString) {
   return !headString.startsWith('ref: ');
 }
 
-export function getPathToCurrentHead() {
-  const HEAD = getHeadContentString();
+export function getPathToCurrentHead(root = process.cwd()) {
+  const HEAD = getHeadContentString(root);
   if (HEAD === null) return null;
   if (isDetachedHead(HEAD)) return null;
   
-  const pathToCurrentHead = getHeadRefPath(HEAD);
+  const pathToCurrentHead = getHeadRefPath(HEAD, root);
 
   return pathToCurrentHead;
 }

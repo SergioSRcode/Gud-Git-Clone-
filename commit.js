@@ -58,7 +58,6 @@ export function parseCommit(commitHash, root = process.cwd()) {
   });
 
   if (!linesObj.parents) linesObj.parents = [];
-
   return linesObj;
 }
 
