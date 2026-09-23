@@ -46,12 +46,10 @@ export default function push(remotePath, branchName) {
   const reachableObjHashes = collectReachableObjects(localTip);
   const { pathToHeads, pathToObjects, headName } = getGudData(remotePath);
   
-  if (remoteTip) {
-    if (!reachableObjHashes.has(remoteTip)) {
-      console.error(`! [rejected] ${branchName} --> ${headName} (non-fast-forward)`);
-      console.error(`Error: Push rejected, ${headName} is not an ancestor of ${branchName}`);
-      return;
-    }
+  if (remoteTip && !reachableObjHashes.has(remoteTip)) {
+    console.error(`! [rejected] ${branchName} --> ${headName} (non-fast-forward)`);
+    console.error(`Error: Push rejected, ${headName} is not an ancestor of ${branchName}`);
+    return;
   }
   
   reachableObjHashes.forEach(hash => {

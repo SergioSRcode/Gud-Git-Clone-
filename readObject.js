@@ -1,4 +1,4 @@
-import { getPathToGud } from "./pathToGud.js";
+// import { getPathToGud } from "./pathToGud.js";
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
@@ -10,12 +10,12 @@ commit <size>\0<content>
 
 */
 
-export default function readObject(hash) {
+export default function readObject(hash, root = process.cwd()) {
   if (hash === null) return null;
 
   const subDirName = hash.slice(0, 2);
   const objectName = hash.slice(2);
-  const pathToObject = path.join(getPathToGud(), 'objects', subDirName, objectName);
+  const pathToObject = path.join(root, '.gud', 'objects', subDirName, objectName);
 
   if (!fs.existsSync(pathToObject)) return null;
 
@@ -27,12 +27,12 @@ export default function readObject(hash) {
   return content;
 }
 
-export function readObjectSize(hash) {
+export function readObjectSize(hash, root = process.cwd()) {
   if (hash === null) return null;
 
   const subDirName = hash.slice(0, 2);
   const objectName = hash.slice(2);
-  const pathToObject = path.join(getPathToGud(), 'objects', subDirName, objectName);
+  const pathToObject = path.join(root, '.gud', 'objects', subDirName, objectName);
 
   if (!fs.existsSync(pathToObject)) return null;
 

@@ -35,11 +35,11 @@ ALGO:
 
 */
 
-export function collectReachableObjects(commitHash) {
+export function collectReachableObjects(commitHash, root = process.cwd()) {
   const hashList = new Set();
 
   function pushTreesAndBlobs(tree) {
-    const objBuffer = readObject(tree);
+    const objBuffer = readObject(tree, root);
     if (objBuffer === null) return;
 
     const linesString = objBuffer.toString('utf8'); 
@@ -59,7 +59,7 @@ export function collectReachableObjects(commitHash) {
   }
 
   function populateHashList(commitHash) {
-    const { tree, parents } = parseCommit(commitHash);
+    const { tree, parents } = parseCommit(commitHash, root);
 
     hashList.add(commitHash);
     hashList.add(tree);

@@ -33,8 +33,8 @@ export default function commit(message) {
   updateRef(commitHash);
 }
 
-export function parseCommit(commitHash) {
-  const contentBuffer = readObject(commitHash);
+export function parseCommit(commitHash, root = process.cwd()) {
+  const contentBuffer = readObject(commitHash, root);
   if (!contentBuffer) return null;
 
   const contentString = contentBuffer.toString('utf8');
