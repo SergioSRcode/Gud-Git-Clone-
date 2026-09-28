@@ -38,34 +38,61 @@ export default function merge(targetBranchName) {
     restore(targetHash);
     console.log("Fast-Forward Merge successful.");
   } else {
-    // 3 way merge
-    const baseEntries = flattenTree(parseCommit(commonAncestor).tree);
-    const ourEntries = flattenTree(parseCommit(currentHash).tree);
-    const theirEntries = flattenTree(parseCommit(targetHash).tree);
-    const { merged, conflicts } = threeWayMerge(baseEntries, ourEntries, theirEntries);
-    if (conflicts.length > 0) {
-      console.error(`Conflict at: ${conflicts.join('\n')}`);
+    // three-way-merge
+    const isMerged = threeWayMergeCommits(
+      currentHash, 
+      targetHash, 
+      commonAncestor,
+      `Merge branch "${targetBranchName}"`
+    );
+
+    if (!isMerged) {
       console.log("Please resolve any conflicts, then restart the merge attempt");
+      console.log("Merge aborted.");
       return;
     }
 
-    const mergeStructure = buildDirectoryStructure(merged);
-    const mergeTreeHash = buildTree(mergeStructure);
-    const mergeCommitContent = createCommitContent(
-      mergeTreeHash, 
-      [currentHash, targetHash], 
-      `Merge branch "${targetBranchName}"`
-    );
-    const mergeCommitBuffer = serializeContentStringToCommitObject(mergeCommitContent);
-    const mergeCommitHash = storeObject(mergeCommitBuffer);
-
-    updateRef(mergeCommitHash);
-    restore(mergeCommitHash);
     console.log("Three-Way Merge successful.");
   }
 }
 
 // console.log(merge('banana'));
+/*
+INPUT: string (our tip commit hash), string (theirs), 
+       string (base), string (commit message)
+OUTPUT: /
+SIDEEFFECT: write
+
+=== MM ===
+Extract the 3-way merging logic from `merge` into `mergeCommits`.
+
+
+*/
+export function threeWayMergeCommits(ours, theirs, base, message) {
+  const baseEntries = flattenTree(parseCommit(base).tree);
+  const ourEntries = flattenTree(parseCommit(ours).tree);
+  const theirEntries = flattenTree(parseCommit(theirs).tree);
+  const { merged, conflicts } = threeWayMerge(baseEntries, ourEntries, theirEntries);
+  if (conflicts.length > 0) {
+    console.error(`Conflict at: ${conflicts.join('\n')}`);
+    return false;
+  }
+
+  const mergeStructure = buildDirectoryStructure(merged);
+  const mergeTreeHash = buildTree(mergeStructure);
+  const mergeCommitContent = createCommitContent(
+    mergeTreeHash, 
+    [ours, theirs], 
+    message
+  );
+  const mergeCommitBuffer = serializeContentStringToCommitObject(mergeCommitContent);
+  const mergeCommitHash = storeObject(mergeCommitBuffer);
+
+  updateRef(mergeCommitHash);
+  restore(mergeCommitHash);
+
+  return true;
+}
 
 /*
 1. Find the common ancestor of 2 branches

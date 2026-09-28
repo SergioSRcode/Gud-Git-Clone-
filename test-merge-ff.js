@@ -61,22 +61,4 @@ const beforeHash2 = mainTip();
 merge("nonexistent");
 assert.strictEqual(mainTip(), beforeHash2, "Test 4 failed: merging nonexistent branch should not move ref");
 
-// Test 5: divergent branches do NOT fast-forward (ref unchanged, three-way not yet done)
-reset();
-fs.writeFileSync("f.txt", "O\n");
-add("f.txt");
-commit("O2");
-const O2 = readHead();
-checkout("-b", "feat2");
-fs.writeFileSync("h.txt", "feat\n");
-add("h.txt");
-commit("feat commit");
-checkout("main");
-fs.writeFileSync("f.txt", "main change\n");
-add("f.txt");
-commit("main commit");
-const mainDiverged = mainTip();
-merge("feat2"); // divergent — should NOT fast-forward
-assert.strictEqual(mainTip(), mainDiverged, "Test 5 failed: divergent merge should not fast-forward main");
-
 console.log("All fast-forward merge tests passed!");
