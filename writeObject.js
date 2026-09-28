@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { buildBlob } from './buildBlob.js';
-import hashBlob from './hashBlob.js';
+import hashObject from './hashObject.js';
 import { getPathToGud } from './pathToGud.js';
 
 export default function writeObject(content) {
@@ -13,7 +13,7 @@ export default function writeObject(content) {
 }
 
 export function storeObject(buffer) {
-  const hash = hashBlob(buffer);  // returns a hashed buffer (blob or tree)
+  const hash = hashObject(buffer);  // returns a hashed buffer (blob or tree)
 
   const compressedObj = zlib.deflateSync(buffer); // compresses buffer = file content
 

@@ -4,6 +4,7 @@ import readIndex from "./readIndex.js";
 import fs from "fs";
 import path from "path";
 import assert from "assert";
+import init from "./init.js";
 
 const TEST_DIR = "./test-repo-add";
 
@@ -11,6 +12,7 @@ function reset() {
   fs.rmSync(TEST_DIR, { recursive: true, force: true });
   fs.mkdirSync(path.join(TEST_DIR, ".gud", "objects"), { recursive: true });
   process.chdir(TEST_DIR);
+  init();
 }
 
 reset();
