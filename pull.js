@@ -1,10 +1,10 @@
-import readHead from "./readHead.js";
 import { findBranchTip, getGudData } from "./push.js";
 import { collectReachableObjects } from "./sync.js";
 import fs from 'node:fs';
 import path from 'node:path';
 import { restore } from "./checkout.js";
 import { findMergeBase } from "./merge.js";
+import { threeWayMergeCommits } from "./merge.js";
 
 /*
 Build pull handling fast-forward and already-up-to-date, 
@@ -52,6 +52,14 @@ files.
       - no? --> merge required (bail out for now)
 - Is branchName === currently checked out branch?
   - yes? restore
+
+
+=== UPDATE 3 way merge ===
+- HOIST base into function scope, 
+    => so it can be used by the classification and the diverged path
+- Diverged Path:
+  - bail if current branch isn't the branch remote should merge into.
+  - use 3-way merge import from merge.js
 */
 
 export default function pull(remotePath, branchName) {
@@ -80,11 +88,12 @@ export default function pull(remotePath, branchName) {
     } 
   });
   
+  let base = null;
   let isFastForward;
   if (localTip === null) {
     isFastForward = true;
   } else {
-    const base = findMergeBase(localTip, remoteTip);
+    base = findMergeBase(localTip, remoteTip);
     if (base === remoteTip) {
       console.log(`Already up-to-date`);
       return;
@@ -95,10 +104,25 @@ export default function pull(remotePath, branchName) {
 
   if (isFastForward) {
     fs.writeFileSync(path.join(pathToHeads, branchName), remoteTip);
+    if (headName === branchName) restore(remoteTip);
   } else {
-    console.log('diverged, merge needed');
-    return;
-  }
+    // diverged case --> 3-way-merge
+    if (headName !== branchName) {
+      console.error("Cannot merge into a branch that is not checked out");
+      return;
+    }
 
-  if (headName === branchName) restore(remoteTip);
+    const isMerged = threeWayMergeCommits(
+      localTip, remoteTip, base, 
+      `Merge branch "${branchName}" of remote`
+    );
+    
+    if (!isMerged) {
+      console.log("Please resolve any conflicts, then restart the pull attempt");
+      console.log("Pull aborted.");
+      return;
+    }
+  } 
+
+  console.log(`Successfully pulled remote branch "${branchName}" into "${headName}".`);
 }
