@@ -4,7 +4,8 @@ import commit from './commit.js';
 import log from './log.js';
 import checkout from './checkout.js';
 import merge from './merge.js';
-// import path from 'path';
+import push from './push.js';
+import pull from './pull.js';
 
 const args = process.argv.slice(2);
 
@@ -40,6 +41,14 @@ function runGud(args) {
 
     case 'merge':
       merge(args[1]);
+      break;
+
+    case 'push':
+      push(args[1], args[2]);
+      break;
+    
+    case 'pull':
+      pull(args[1], args[2]);
       break;
 
     default:
