@@ -1,9 +1,19 @@
 import fs from 'node:fs';
-import { getPathToCurrentHead } from './readHead.js';
+import { isDetachedHead, getHeadContentString, getHeadRefPath } from './readHead.js';
+import { getGudData } from './push.js';
 
 export default function updateRef(hash) {
-  const pathToCurrentHead = getPathToCurrentHead();
-  if (!pathToCurrentHead) return null;
+  const headContentString = getHeadContentString(process.cwd());
+
+  if (headContentString === null) return null;
+  if (isDetachedHead(headContentString)) {
+    const { pathToHeadRef } = getGudData()
+    fs.writeFileSync(pathToHeadRef, hash + '\n');
+
+    return;
+  }
+
+  const pathToCurrentHead = getHeadRefPath(headContentString);
   
   fs.writeFileSync(pathToCurrentHead, hash + '\n');
 }

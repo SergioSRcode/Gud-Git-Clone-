@@ -22,7 +22,7 @@ export function getHeadContentString(root = process.cwd()) {
   return HEAD;
 }
 
-function isDetachedHead(headString) {
+export function isDetachedHead(headString) {
   return !headString.startsWith('ref: ');
 }
 
@@ -36,7 +36,7 @@ export function getPathToCurrentHead(root = process.cwd()) {
   return pathToCurrentHead;
 }
 
-function getHeadRefPath(head, root = process.cwd()) {
+export function getHeadRefPath(head, root = process.cwd()) {
   return path.join(root, '.gud', head.split(" ")[1].trim());
 }
 // console.log(readPathToHead());
